@@ -1,0 +1,109 @@
+html {
+    --main_color: #004;
+    --secondary_color: #ddd;
+    text-align: center;
+    background-color: var(--secondary_color);
+    color: var(--main_color)
+}
+
+form {
+    margin: 1em;
+}
+
+input[type=text] {
+    background-color: var(--main-color);
+    color: var(--main-color);
+    cursor: text;
+}
+
+table {
+    border-collapse: collapse;
+
+}
+
+#game {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+#game p {
+    flex-direction: column;
+    align-items: baseline;
+}
+
+tr > th {
+    font-size: 1.3em;
+}
+
+table > th {
+    font-size: 3em;
+}
+
+td, tr, th {
+    border: .005em solid var(--secondary_color);
+    border-radius: .5em;
+    padding: .3em;
+}
+
+h1, header {
+    background-color: var(--main_color);
+    color: var(--secondary_color);
+}
+
+canvas, tr, th {
+    background-color: #003;
+    color: var(--secondary_color);
+}
+
+header{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 0px;
+}
+
+ul {
+    text-align: left;
+}
+
+button {
+    margin: .4em;
+}
+
+button, input{
+    background-color: var(--main_color);
+    color: var(--secondary_color);
+    padding: .2em .3em;
+    border: .1em solid var(--secondary_color);
+    border-radius: .5em;
+    box-shadow: 0 0 .1em .1em #555;
+    outline: none;
+    cursor: pointer;
+}
+
+button:active, input[type=submit]:active {
+    box-shadow: 0 #fff;
+    background-color: #555;
+    transform: translateY(.3em)
+}
+
+header h1, img {
+    margin: 0em .5em;
+}
+
+body > p {
+    font-size: .7em;
+}
+
+footer {
+    font-size: .6em;
+}
+
+canvas {
+    margin-top: 1em;
+    margin-bottom: 1em;
+    border: .0625em solid var(--secondary_color);
+}
