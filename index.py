@@ -19,7 +19,7 @@ low_scores = []
 name = ''
 
 try:
-    connection = db.connect('localhost', 'pb22', 'ivohj', 'cs6503_cs1106_pb22')
+    connection = db.connect('localhost', 'username', 'password', 'database_name')
     cursor = connection.cursor(db.cursors.DictCursor)
     cursor.execute('''SELECT name FROM game_data''')
     if len(form_data) > 0:
