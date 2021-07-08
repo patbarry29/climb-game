@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Climb</title>
+        <link rel="stylesheet" href="climb.css">
+        <script src="climb.js" type="module"></script>
+    </head>
+    <body>
+        <header>
+            <img src='images/ladder.png' />
+            <h1>Climb: A Game by Me*</h1>
+            <img src='images/ladder.png' />
+        </header>
+
+        <p>
+            I made this website while involuntarily locked inside my own home.
+        </p>
+
+        <button onclick="controls()">Click here for Controls</button>
+        <section id = 'instructions'></section>
+
+        <form>
+            <input type='text' name='name' placeholder='Name' maxlength='15'/>
+            <input type='submit' value='Submit'>
+        </form>
+        <section id ='game'>
+            <canvas width="700" height="500">
+                <script>
+                    let canvas;
+                    let context;
+                    let width;
+                    let height;
+
+                    let difficulty;
+                    let easy;
+                    let medium;
+                    let hard;
+                    let ez_click;
+                    let med_click;
+                    let hard_click;
+
+                    let request;
+
+                    let lines = [];
+                    let lineWidth = 3;
+                    let dBetween = 60;
+
+                    let ladders = [];
+                    let ladder_img;
+                    let lSize = 30;
+
+                    let player;
+                    let player_img;
+
+                    let enemy;
+                    let enemy_img;
+                    let gameStart;
+                    let appeared_img;
+
+                    let target;
+                    let target_img;
+
+                    let button;
+                    let button_img;
+                    let button_interval;
+                    let buttonclicked;
+                    let buttonclicked_img;
+                    let mousePos;
+
+                    let score;
+                    let threshold;
+                    let loScore;
+
+                    let pSize = 20;
+                    let player_xChange;
+                    let player_yChange;
+                    let enemy_xChange;
+                    let enemy_yChange;
+                    let dropBy = 4;
+                    let gravity = 2;
+
+                    let interval_id;
+
+                    let moveLeft = false;
+                    let moveUp = false;
+                    let moveRight = false;
+                    let moveDown = false;
+
+                    document.addEventListener('DOMContentLoaded', init, false);
+
+                    function init() {
+                        canvas = document.querySelector('canvas');
+                        context = canvas.getContext('2d');
+                        width = canvas.width;
+                        height = canvas.height;
+
+                        easy = new Image();
+                        easy.src = 'images/ez.png';
+                        medium = new Image();
+                        medium.src = 'images/med_selected.png';
+                        hard = new Image();
+                        hard.src = 'images/hard.png';
+                        
+                        clearInterval(interval_id);
+                        
+                        difficulty = 'medium';
+                        ez_click = false;
+                        med_click = false;
+                        hard_click = false;
+                        player_xChange = 6;
+                        player_yChange = 4;
+                        
+                        gameStart = false;
+                        button_interval = 0;
+                        appeared_img = new Image();
+                        appeared_img.src = 'images/appeared.png';
+                        
+                        // LINES
+                        for (let y = height - dBetween; y > dBetween + 20; y -= dBetween) {
+                            if (lines.length < 6) {
+                                lines.push(y);
+                            }
+                        }
+                        
+                        player_img = new Image();
+                        player_img.src = 'images/world.png';
+                        player = {
+                            x : 0,
+                            y : height - pSize
+                        };
+
+                        score = 1000;
+                        threshold = 949;
+                        loScore = score/10;
+                        
+                        target_img = new Image();
+                        target_img.src = 'images/cure.png';
+                        target = {
+                            x : width - dBetween,
+                            y: height - dBetween*(lines.length+1),
+                            size : 60
+                        };
+                        
+                        enemy_img = new Image();
+                        enemy_img.src = 'images/corona2.png';
+                        enemy = {
+                            x : width - target.size - pSize,
+                            y : height - 60*(lines.length+1) + (pSize*2)
+                        };
+                        
+                        button_img = new Image();
+                        button_img.src = 'images/button.png';
+                        button = {
+                            x : width/3,
+                            y : height/3
+                        };
+                        
+                        buttonclicked = false;
+                        buttonclicked_img = new Image();
+                        buttonclicked_img.src = 'images/buttonclicked.png';
+                        
+                        // LADDER
+                        ladder_img = new Image();
+                        ladder_img.src = 'images/ladder.png';
+                        if (ladders.length === 12) {
+                            ladders = [];
+                        }
+                        for (let i = 0; i < lines.length; i++) {
+                            let y = lines[i]+(lineWidth/2);
+                            if (y < height) {
+                                let ladder1 = {
+                                    x : getRandomNumber(50,460),
+                                    y : y
+                                };
+                                ladders.push(ladder1);
+                                
+                                let half = width/2;
+                                let laddAdd = getRandomNumber(width/4, width/2);
+                                if (ladder1.x > half) {
+                                    laddAdd = -laddAdd;
+                                }
+                                let ladder2 = {
+                                    x : ladder1.x + laddAdd,
+                                    y : y
+                                };
+                                ladders.push(ladder2);
+                            }
+                        }
+                        
+                        
+                        window.addEventListener('keydown', activate, false);
+                        window.addEventListener('keyup', deactivate, false);
+                        interval_id = window.setInterval(draw, 33);
+                    }
+
+                    function draw() {
+                        // DRAW LINES
+                        context.clearRect(0, 0, width, height);
+                        for (let y = 0; y < lines.length; y++) {
+                            context.strokeStyle = 'white';
+                            context.beginPath();
+                            context.lineWidth = lineWidth;
+                            context.moveTo(0,lines[y]);
+                            context.lineTo(width,lines[y]);
+                            context.stroke();
+                        }
+                        
+                        // DRAW LADDERS
+                        for (let i = 0; i < ladders.length; i++) {
+                            context.drawImage(ladder_img, ladders[i].x, ladders[i].y);
+                        }
+                        
+                        // DRAW PLAYER
+                        context.drawImage(player_img, player.x, player.y);
+                        
+                        // GET DIFFICULTY
+                        if (!gameStart) {
+                            getDifficulty()
+                        }
+
+                        // DRAW ENEMY
+                        if (player.y <= height - dBetween) {
+                            gameStart = true
+                        }
+                        if (gameStart) {
+                            context.drawImage(enemy_img, enemy.x, enemy.y);
+                            moveEnemy();
+                            score -= 1;
+                        }
+                        if (gameStart && score > threshold) {
+                            context.drawImage(appeared_img, width/2- 150, 0 + 15, 300, 100);
+                        }
+                        
+                        // DRAW TARGET BOX
+                        context.drawImage(target_img, target.x, target.y);
+                        
+                        // CHECK IF ENEMY COLLISION
+                        if (enemyCollision() || score === 0){
+                            canvas.addEventListener('click', function(evt) {
+                                mousePos = getMousePos(canvas, evt);
+                                if (mousePos.x > button.x && mousePos.x < button.x * 2 && mousePos.y > button.y && mousePos.y < button.y * 2) {
+                                    buttonclicked = true;
+                                }
+                            }, false);
+                            let message = 'Congrats, you have doomed humanity';
+                            end(message);
+                            clearInterval(interval_id);
+                            interval_id = window.setInterval(mouse, 33);
+                        }
+                        
+                        // CHECK IF TARGET REACHED
+                        if (player.x+pSize > target.x && player.y < target.y + target.size) {
+                            canvas.addEventListener('click', function(evt) {
+                                mousePos = getMousePos(canvas, evt);
+                                if (mousePos.x > button.x && mousePos.x < button.x * 2 && mousePos.y > button.y && mousePos.y < button.y * 2) {
+                                    buttonclicked = true;
+                                }
+                            }, false);
+                            
+                            let message = 'Congrats, you saved humanity with ' + loScore + ' points remaining';
+                            end(message);
+                            clearInterval(interval_id);
+                            let url = 'store_score.py?score=' + loScore + '?' + difficulty;
+                            request = new XMLHttpRequest();
+                            request.addEventListener('readystatechange', handle_response, false);
+                            request.open('GET', url, true);
+                            request.send(null);
+                            interval_id = window.setInterval(mouse, 33);
+                        }
+                        
+                        // CHECK IF FLOATING IN AIR
+                        if (!onLadder(player) && !solid(player)){
+                            drop();
+                        } else {
+                            dropBy = 2;
+                        }
+                        
+                        // FUNCTION FOR DIRECTION OF PLAYER
+                        direction();
+
+                        if (score/10 % 1 === 0) {
+                            loScore = score/10;
+                        }
+                        context.fillStyle = 'white';
+                        context.font = "30px Arial";
+                        context.fillText(loScore, width - 50, 50);
+                    }
+
+                    function getDifficulty() {
+                        let easy_x = width/2-150
+                        let medium_x = width/2-50
+                        let hard_x = width/2+50
+                        let y_pos = 15
+
+                        canvas.addEventListener('click', function(evt) {
+                            mousePos = getMousePos(canvas, evt);
+                            if (mousePos.x > easy_x && mousePos.x < medium_x && mousePos.y > y_pos && mousePos.y < y_pos + 37 && !ez_click) {
+                                easy.src = 'images/ez_selcted.png'
+                                medium.src = 'images/med.png'
+                                hard.src = 'images/hard.png'
+                                difficulty = 'easy'
+                                score = 750
+                                // THRESHOLD IS HOW LONG THE APPEARED IMAGE WILL STAY ON FOR
+                                threshold = 699
+
+                                // THESE BOOLEAN CHECKS ARE TO ENSURE THE CLICKS DON'T GO THROUGH MORE THAN ONCE
+                                ez_click = true
+                                med_click = false
+                                hard_click = false
+                            } else if (mousePos.x > medium_x && mousePos.x < hard_x && mousePos.y > y_pos && mousePos.y < y_pos + 37 && !med_click) {
+                                easy.src = 'images/ez.png'
+                                medium.src = 'images/med_selected.png'
+                                hard.src = 'images/hard.png'
+                                difficulty = 'medium'
+                                score = 1000
+                                threshold = 949
+                                ez_click = false
+                                med_click = true
+                                hard_click = false
+                            } else if (mousePos.x > hard_x && mousePos.x < width/2 +150 && mousePos.y > y_pos && mousePos.y < y_pos + 37 && !hard_click) {
+                                easy.src = 'images/ez.png'
+                                medium.src = 'images/med.png'
+                                hard.src = 'images/hard_selected.png'
+                                difficulty = 'hard'
+                                score = 1250
+                                threshold = 1199
+                                ez_click = false
+                                med_click = false
+                                hard_click = true
+                            }
+                        }, false);
+                        
+                        context.drawImage(easy, easy_x, y_pos, 100, 37);
+                        context.drawImage(medium, medium_x, y_pos, 100, 37);
+                        context.drawImage(hard, hard_x, y_pos, 100, 37);
+                    }
+
+                    function handle_response() {
+                        // Check that the response has fully arrived
+                        if ( request.readyState === 4 ) {
+                            // Check the request was successful
+                            if ( request.status === 200 ) {
+                                if ( request.responseText.trim() === 'success' ) {
+                                    // score was successfully stored in database
+                                    console.log(request.responseText.trim())
+                                    // let section = document.getElementById('game')
+                                    // section.innerHTML += '<p>BEEP BOOP BEEP - Connecting to server...</p>'
+                                } else  {
+                                    // score was not successfully stored in database
+                                }
+                            }
+                        }
+                    }
+
+                    function direction() {                
+                        if (moveLeft && notEdge) {
+                            player.x -= player_xChange;
+                        }
+                        if (moveRight && notEdge) {
+                            player.x += player_xChange;
+                        }
+                        if (moveUp && onLadder(player)) {
+                            player.y -= player_yChange;
+                        }
+                        if (moveDown && (aboveLadder(player))) {
+                            player.y += player_yChange;
+                        }
+                    }
+
+                    function moveEnemy() {
+                        // THESE 2 VARIABLES WILL STORE THE DISTANCES EACH LADDER IS FROM THE ENEMY
+                        let a;
+                        let b;
+                        // IF PLAYER IS BELOW ENEMY
+                        if (player.y > enemy.y) {
+                            if (difficulty==='easy') {
+                                enemy_xChange = 1
+                                enemy_yChange = 2
+                            } else if (difficulty === 'medium') {
+                                enemy_xChange = 2
+                                enemy_yChange = 2
+                            } else {
+                                enemy_xChange = 3
+                                enemy_yChange = 3
+                            }
+                            if (aboveLadder(enemy) || onLadder(enemy) && !solid(enemy)) {
+                                // THIS CHECKS IF THE DISTANCE FROM ENEMY Y POSITION TO THE LINE BELOW IT IS LESS THAN THE Y CHANGE VALUE
+                                if (((enemy.y % dBetween) - dBetween) * -1 < enemy_yChange) {
+                                    // IF IT IS, SIMPLY ADD THE DISTANCE TO THE LINE TO ENEMY Y
+                                    enemy.y += ((enemy.y % dBetween) - dBetween)*-1;
+                                } else {
+                                    enemy.y += enemy_yChange
+                                }
+                            } else {
+                                // AN ARRAY TO STORE THE CLOSEST LADDER TO ENEMY
+                                let closest = [];
+                                // GO THROUGH LADDERS ONCE
+                                for (let i = 0; i < ladders.length; i++) {
+                                    // CHECK ENEMY IS ON SAME LEVEL AS THIS LADDER
+                                    if (enemy.y + pSize === ladders[i].y - lineWidth/2) {
+                                        a = ladders[i].x - enemy.x
+                                        // GO THROUGH LADDERS AGAIN
+                                        for (let j = 0; j < ladders.length; j++) {
+                                            if (enemy.y + pSize === ladders[j].y - lineWidth/2) {
+                                                if (a!= ladders[j].x - enemy.x) {
+                                                    b = ladders[j].x - enemy.x
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // FUNCTION TO COMPARE CLOSER LADDERS
+                                enemyLadder(closest, a , b)
+                                // CHECK IF ARRAY IS EMPTY
+                                if (closest[0] === null) {
+                                    enemy_xChange = 0
+                                } else if (closest[0] < 0 && enemy_xChange > 0) {
+                                    enemy_xChange *= -1
+                                } else if (closest[0] > 0 && enemy_xChange < 0){
+                                    enemy_xChange *= -1
+                                }
+                                enemy.x += enemy_xChange
+                            }
+                        }
+                        // IF PLAYER IS ABOVE ENEMY
+                        else {
+                            // INCREASE SPEED OF ENEMY
+                            if (difficulty==='easy') {
+                                enemy_xChange = 2
+                                enemy_yChange = 3
+                            } else if (difficulty === 'medium') {
+                                enemy_xChange = 5
+                                enemy_yChange = 6
+                            } else {
+                                enemy_xChange = 9
+                                enemy_yChange = 10
+                            }
+                            if (onLadder(enemy) && enemy.y != player.y) {
+                                // SAME AS ABOVE, CHECKING IF YCHANGE GREATER THAN DISTANCE TO LINE
+                                if (enemy.y % dBetween < enemy_yChange && !solid(enemy)) {
+                                        enemy.y -= enemy.y % dBetween
+                                } else {
+                                    enemy.y -= enemy_yChange
+                                }
+                            } else if (solid(enemy)) {
+                                // VARIABLE WITH HORIZONTAL DISTANCE TO PLAYER FROM ENEMY
+                                let pD = player.x - enemy.x    
+                                // CHECKS IF PLAYER IS ON SAME LEVEL/LINE AS ENEMY AND IF SO WHICH SIDE  
+                                if (pD > 0 && enemy.x + pSize < player.x && player.y > enemy.y - dBetween && enemy_xChange < 0) {
+                                    enemy_xChange *= -1
+                                } else if (enemy.x + pSize > player.x && player.y > enemy.y - dBetween && enemy_xChange > 0){
+                                    enemy_xChange *= -1
+                                } else if (player.y <= enemy.y - dBetween) {
+                                    for (let i = 0; i < ladders.length; i++) {
+                                        if (enemy.y + pSize === ladders[i].y + dBetween - lineWidth/2) {
+                                            a = ladders[i].x - enemy.x
+                                            for (let j = 0; j < ladders.length; j++) {
+                                                if (enemy.y + pSize === ladders[j].y + dBetween - lineWidth/2) {
+                                                    if (a!= ladders[j].x - enemy.x) {
+                                                        b = ladders[j].x - enemy.x
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // IF BOTH LADDERS ARE TO THE LEFT GO LEFT
+                                    if (a<0 && b<0 && enemy_xChange > 0){
+                                        enemy_xChange *= -1
+                                    } 
+                                    // ELSE GO RIGHT AS IT'S EASIER TO BLOCK OFF PLAYER FROM REACHING CURE
+                                    else if (enemy_xChange < 0 && (a>0 || b>0)){
+                                        enemy_xChange *= -1
+                                    }
+                                } 
+                                enemy.x += enemy_xChange
+                            }
+                        }
+                    }
+
+                    function enemyLadder(list, a, b) {
+                        if (a < 0 && b > 0) {
+                            a *= -1
+                            if (a > b) {
+                                list.push(b)
+                            } else {
+                                a *= -1
+                                list.push(a)
+                            }
+                        } else if (a > 0 && b < 0){
+                            b *= -1
+                            if (a > b) {
+                                b *= -1
+                                list.push(b)
+                            } else {
+                                list.push(a)
+                            }
+                            
+                        } else if (a < 0 && b < 0){
+                            if (a > b) {
+                                list.push(a)
+                            } else {
+                                list.push(b)
+                            }
+                            
+                        } else {
+                            if (a > b) {
+                                list.push(b)
+                            } else {
+                                list.push(a)
+                            }
+                        }
+                    }
+
+                    function enemyCollision() {
+                        if (player.x + pSize < enemy.x ||
+                            enemy.x + pSize < player.x ||
+                            player.y > enemy.y + pSize ||
+                            enemy.y > player.y + pSize) {
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }
+
+                    function drop() {
+                        dropBy += gravity
+                        // CREATE VARIABLE THAT ACCOUNTS FOR EMPTY SPACE AT TOP OF CANVAS AND GETS BOTTOM OF PLAYER
+                        let b = player.y + pSize + 40
+                        // FINDS DISTANCE TO NEXT LINE BELOW PLAYER
+                        let d = dBetween - (b % dBetween)
+
+                        // IF THIS DISTANCE IS LESS THAN THE YCHANGE
+                        if (dropBy > d) {
+                            player.y += d
+                        } else {
+                            player.y += dropBy
+                        }
+                    }
+
+                    function notEdge() {
+                        if (player.x < 0 && player.x+pSize > width) {
+                            return false
+                        } else {
+                            return true
+                        }
+                    }
+
+                    function onLadder(p) {
+                        let b = false
+                        for (let i = 0; i < ladders.length; i++) {
+                            if ((p.y + pSize > ladders[i].y && p.y + pSize <= ladders[i].y + dBetween) && (p.x + pSize > ladders[i].x && p.x < ladders[i].x + lSize)) {
+                                b = true
+                            }
+                        }
+                        return b
+                    }
+
+                    function aboveLadder(p) {
+                        let b = false
+                        for (let i = 0; i < ladders.length; i++) {
+                            if ((p.y + pSize >= ladders[i].y - lineWidth/2  && p.y + pSize < ladders[i].y + dBetween- lineWidth) && p.x + pSize > ladders[i].x && p.x < ladders[i].x + lSize) {
+                                b = true
+                            }
+                        }
+                        return b
+                    }
+
+                    function solid(p) {
+                        for (let i = 0; i < lines.length; i++) {
+                            if (p.y + pSize === lines[i] || p.y + pSize === height) {
+                                return true
+                            }
+                        }
+                        return false
+                    }
+
+                    function getMousePos(canvas, event) {
+                        let rect = canvas.getBoundingClientRect();
+                        return {
+                            x : event.clientX - rect.left,
+                            y : event.clientY - rect.top
+                        };
+                    }
+
+                    function mouse() {
+                        if (buttonclicked) {
+                            if (button_interval > 7) {
+                                init();
+                            }
+                            context.drawImage(buttonclicked_img, button.x, button.y);                
+                            button_interval += 1;
+                        }
+                    }
+
+                    function end(message) {
+                        context.drawImage(button_img, button.x, button.y);
+                        context.fillStyle = 'white';
+                        context.font = "15px Arial";
+                        context.textAlign = 'center'
+                        context.fillText(message, width/2, 0 + 15);
+                        let message2 = 'Click the big blue button to try again'
+                        context.fillText(message2, width/2, 0 + 50);
+                        
+                        // clearInterval(interval_id)
+                    }
+
+                    function activate(event) {
+                        let keyCode = event.keyCode;
+                        if (keyCode === 37 || keyCode === 65) {
+                            moveLeft = true;
+                        } else if (keyCode === 38 || keyCode === 87) {
+                            moveUp = true;
+                        } else if (keyCode === 39 || keyCode === 68) {
+                            moveRight = true;
+                        } else if (keyCode === 40 || keyCode === 83) {
+                            moveDown = true;
+                        }
+                    }
+
+                    function deactivate(event) {
+                        let keyCode = event.keyCode;
+                        if (keyCode === 37 || keyCode === 65) {
+                            moveLeft = false;
+                        } else if (keyCode === 38 || keyCode === 87) {
+                            moveUp = false;
+                        } else if (keyCode === 39 || keyCode === 68) {
+                            moveRight = false;
+                        } else if (keyCode === 40 || keyCode === 83) {
+                            moveDown = false;
+                        }
+                    }
+
+                    function getRandomNumber(min, max) {
+                        return Math.floor(Math.random() * (max - min + 1)) + min;
+                    }
+                </script>x
+            </canvas>
+        </section>
+
+        <button onclick="read_more()">Click here to Read about my Game</button>
+        <section id = 'inspiration'></section>
+
+        <script>
+            function controls() {
+                let section1 = document.getElementById('instructions')
+                if (section1.innerHTML === '') {
+                section1.innerHTML = "<h1>How to Play</h1><p>The aim of the game is to reach the bottle of blue \
+                    liquid at the top level before time runs out or the enemy (coronavirus) catches you.</p><p>You \
+                    can change the difficulty of the game by clicking the buttons at the top of the screen. Note \
+                    that changing this will also change the score in the top right corner. When you get to the first\
+                    level, the game will start and the score will tick down. If you go for 'Easy' mode. Your score \
+                    starts at 75. 'Medium' starts at 100 and 'Hard' at 125. This also means you have less time to \
+                    complete the game. You have 25, 35, and 45 seconds to complete easy, medium, and hard \
+                    respectively.</p><h1>Controls</h1><p>UP Arrow or W to climb when on a ladder</p><p>DOWN Arrow or \
+                    S to descend when above or on a ladder</p><p>LEFT and RIGHT Arrows or A and D to move your player \
+                    left or right</p>"
+                } else {
+                    section1.innerHTML = ''
+                }
+            }
+            function read_more() {
+                let section2 = document.getElementById('inspiration')
+                if (section2.innerHTML === '') {
+                    section2.innerHTML = "<h1>My Inspiration for this Game</h1><p>When this assignment was given to me,\
+                        I wasn't sure what to do. I had a few ideas, such as:<ul><li>A movie database (like \
+                        <a href='https://www.letterboxd.com'>Letterboxd</a>)</li><li>A replica of a famous arcade \
+                        game which involves a yellow monster ruthlessly murdering his stalker ghosts (they were \
+                        just following orders!)</li><li>another replica of a game Nintendo made back in the day \
+                        with some kind of gorilla throwing barrels at a moustache'd plumber trying to keep the \
+                        princess safe, only for the plumber to kidnap the princess in the end.</li></ul></p>\
+                        <p>After thinking about it for a few days, I decided to try and recreate the Nintendo \
+                        game. Another day later, when I realised how big and scary the Nintendo trademark is, \
+                        I decided to come up with my own game which would be loosely based on the two games I \
+                        describe above.</p>"
+                } else {
+                    section2.innerHTML = ''
+                }
+            }
+        </script>
+        <footer>
+            <p>*Me = Patrick Barry</p>
+        </footer>
+    </body>
+</html>
